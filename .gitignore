@@ -1,0 +1,17 @@
+__pycache__/
+logs/
+samples/
+*.pyc
+.env
+.venv
+env/
+venv/
+*.pkl
+COMPREHENSIVE_RESEARCH_PAPER_IEEE.*
+DCGAN_Plant_Disease_IEEE.*
+DCGAN_Plant_Disease_Paper.*
+*REPORT*.md
+*SUMMARY*.md
+export_paper_pdf.py
+generate_paper_figures.py
+paper_assets/
