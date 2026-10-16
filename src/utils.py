@@ -104,7 +104,7 @@ def load_checkpoint(filepath: str, generator, discriminator,
     Returns:
         Dictionary with checkpoint info
     """
-    checkpoint = torch.load(filepath, map_location=device)
+    checkpoint = torch.load(filepath, map_location=device, weights_only=True)
     
     generator.load_state_dict(checkpoint['generator_state_dict'])
     discriminator.load_state_dict(checkpoint['discriminator_state_dict'])
@@ -136,7 +136,7 @@ def load_generator_only(filepath: str, generator, device='cuda'):
         generator: Generator model
         device: Device to load to
     """
-    checkpoint = torch.load(filepath, map_location=device)
+    checkpoint = torch.load(filepath, map_location=device, weights_only=True)
     generator.load_state_dict(checkpoint['generator_state_dict'])
     print(f"[Checkpoint] Loaded Generator from: {os.path.basename(filepath)}")
 

@@ -38,8 +38,9 @@ def visual_comparison(generator, dataloader, device: str,
         z = torch.randn(n_samples, LATENT_DIM, 1, 1, device=device)
         fake_batch = generator(z)
     
-    # Create comparison grid
-    fig, axes = plt.subplots(2, n_samples, figsize=(2*n_samples, 4))
+    # Create comparison grid (squeeze=False so axes is always a 2-D array,
+    # even when n_samples == 1)
+    fig, axes = plt.subplots(2, n_samples, figsize=(2*n_samples, 4), squeeze=False)
     
     for i in range(n_samples):
         # Real
@@ -326,6 +327,27 @@ if __name__ == "__main__":
     
     elif args.action == 'progress':
         plot_training_progress(SAMPLES_DIR, args.plant, args.disease)
+    
+    elif args.action in ('compare', 'memorization'):
+        if not args.checkpoint:
+            print(f"Error: --checkpoint is required for the '{args.action}' action")
+            sys.exit(1)
+        
+        # Load the trained generator
+        generator = Generator().to(args.device)
+        load_generator_only(args.checkpoint, generator, args.device)
+        
+        # DataLoader for real images
+        dataloader = create_dataloader(args.plant, args.disease, batch_size=args.n)
+        
+        if args.action == 'compare':
+            save_path = os.path.join(
+                SAMPLES_DIR, f"{args.plant}_{args.disease}_comparison.png")
+            visual_comparison(generator, dataloader, args.device,
+                             n_samples=args.n, save_path=save_path)
+        else:
+            nearest_neighbor_check(generator, dataloader, args.device,
+                                  n_generated=args.n)
     
     else:
         print(f"Action '{args.action}' requires additional setup")

@@ -3,3 +3,5 @@ torchvision
 streamlit
 Pillow
 numpy
+tqdm
+matplotlib

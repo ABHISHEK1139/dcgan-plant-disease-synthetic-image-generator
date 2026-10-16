@@ -97,7 +97,7 @@ def finetune_disease(plant: str, disease: str, base_checkpoint: str,
         return
     
     print(f"Loading healthy checkpoint...")
-    checkpoint = torch.load(base_checkpoint, map_location=device, weights_only=False)
+    checkpoint = torch.load(base_checkpoint, map_location=device, weights_only=True)
     
     # Load BOTH Generator AND Discriminator weights
     if 'generator_state_dict' in checkpoint:

@@ -13,7 +13,7 @@ from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import (
     LATENT_DIM, BATCH_SIZE, STAGE1_EPOCHS, STAGE2_EPOCHS,
-    STAGE1_LR, BETA1, BETA2,
+    STAGE1_LR, STAGE2_LR, STAGE2_D_LR, BETA1, BETA2,
     LABEL_SMOOTHING_REAL, LABEL_SMOOTHING_FAKE, LABEL_FLIP_RATE,
     NOISE_STD_INITIAL, NOISE_DECAY, GRAD_CLIP_VALUE,
     SAMPLE_INTERVAL, CHECKPOINT_DIR, PLANT_DISEASE_MAP
@@ -180,7 +180,8 @@ def train_epoch(generator, discriminator, dataloader,
 
 def train_stage(generator, discriminator, dataloader, device: str,
                 plant: str, disease: str, stage: int,
-                epochs: int, lr: float, resume_from: str = None):
+                epochs: int, lr: float, d_lr: float = None,
+                resume_from: str = None):
     """
     Train for a complete stage (Stage 1 or Stage 2).
     
@@ -193,17 +194,22 @@ def train_stage(generator, discriminator, dataloader, device: str,
         disease: Disease type
         stage: Training stage (1 or 2)
         epochs: Number of epochs
-        lr: Learning rate
+        lr: Learning rate for the generator
+        d_lr: Learning rate for the discriminator (two-timescale/TTUR
+            update rule; defaults to `lr` when None)
         resume_from: Optional checkpoint to resume from
     """
+    if d_lr is None:
+        d_lr = lr
+    
     print(f"\n{'='*60}")
     print(f"Stage {stage}: Training on {plant} - {disease}")
-    print(f"Epochs: {epochs}, LR: {lr}")
+    print(f"Epochs: {epochs}, G_LR: {lr}, D_LR: {d_lr}")
     print(f"{'='*60}\n")
     
-    # Setup optimizers
+    # Setup optimizers (TTUR: separate learning rates for G and D)
     g_optimizer = optim.Adam(generator.parameters(), lr=lr, betas=(BETA1, BETA2))
-    d_optimizer = optim.Adam(discriminator.parameters(), lr=lr, betas=(BETA1, BETA2))
+    d_optimizer = optim.Adam(discriminator.parameters(), lr=d_lr, betas=(BETA1, BETA2))
     
     # Loss function
     criterion = nn.BCELoss()
@@ -235,10 +241,13 @@ def train_stage(generator, discriminator, dataloader, device: str,
     
     # Training loop
     for epoch in range(start_epoch, epochs + 1):
-        # Get a batch of real images for perceptual loss comparison
-        for real_batch in dataloader:
-            real_batch_cache = real_batch.to(device)
-            break
+        # Get a batch of real images for perceptual loss comparison.
+        # Only needed (and only worth the extra iteration) when the
+        # perceptual loss is enabled; it is currently disabled.
+        if perceptual_loss_fn is not None:
+            for real_batch in dataloader:
+                real_batch_cache = real_batch.to(device)
+                break
         
         # Train one epoch
         d_loss, g_loss, d_real, d_fake = train_epoch(
@@ -366,7 +375,7 @@ def run_two_stage_training(plant: str, target_disease: str,
     train_stage(
         generator, discriminator, disease_loader, device,
         plant, target_disease, stage=2,
-        epochs=stage2_epochs, lr=STAGE2_LR,
+        epochs=stage2_epochs, lr=STAGE2_LR, d_lr=STAGE2_D_LR,
         resume_from=stage2_resume
     )
     

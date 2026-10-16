@@ -10,7 +10,7 @@ from datetime import datetime
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import (
     BATCH_SIZE, PLANT_DISEASE_MAP,
-    STAGE1_LR, STAGE2_LR
+    STAGE1_LR, STAGE2_LR, STAGE2_D_LR
 )
 from src.models import Generator, Discriminator
 from src.data_loader import create_dataloader
@@ -136,7 +136,7 @@ def train_plant_full(plant: str, device: str = 'cuda',
         train_stage(
             generator, discriminator, disease_loader, device,
             plant, disease, stage=2,
-            epochs=disease_epochs, lr=STAGE2_LR,
+            epochs=disease_epochs, lr=STAGE2_LR, d_lr=STAGE2_D_LR,
             resume_from=resume_checkpoint
         )
     

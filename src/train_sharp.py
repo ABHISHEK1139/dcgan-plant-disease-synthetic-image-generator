@@ -188,9 +188,13 @@ def train_sharp(plant: str, disease: str, device: str = 'cuda',
     
     noise_std = NOISE_STD_INITIAL
     
+    # Build the DataLoader once; rebuilding it every epoch re-scans the
+    # dataset directory and respawns worker processes each time.
+    dataloader = create_dataloader(plant, disease, batch_size=BATCH_SIZE)
+    
     for epoch in range(start_epoch, epochs + 1):
         d_loss, g_loss, perc_loss, d_real, d_fake = train_epoch_sharp(
-            generator, discriminator, dataloader=create_dataloader(plant, disease, batch_size=BATCH_SIZE),
+            generator, discriminator, dataloader=dataloader,
             g_optimizer=g_optimizer, d_optimizer=d_optimizer,
             criterion=criterion, perceptual_loss=perceptual_loss,
             device=device, epoch=epoch, noise_std=noise_std,
